@@ -5,7 +5,7 @@ WORKDIR /app
 COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv sync --frozen
 
-COPY backend/src/ ./src/
+COPY src/ ./src/
 
 EXPOSE 8000
 

@@ -3,6 +3,10 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --py-panel-pad: 0.585rem;
+  --grid-bg-pattern:
+    linear-gradient(#34343c 2px, transparent 2px),
+    linear-gradient(90deg, #34343c 2px, transparent 2px);
 }
 
 @theme inline {
@@ -39,17 +43,23 @@
   --text-body-s: 16px;
   --text-body-xs: 14px;
   --text-body-2xs: 12px;
+}
 
-  --py-panel-pad: 0.585rem;
+@layer utilities {
+  .grid-background {
+    background-image: var(--grid-bg-pattern);
+    background-size: 70px 70px;
+  }
+
+  .py-panel-pad {
+    padding-top: var(--py-panel-pad);
+    padding-bottom: var(--py-panel-pad);
+  }
 }
 
 @layer base {
   [class*='text-heading-'] {
     letter-spacing: -0.31px;
-  }
-  [class*='py-panel-pad'] {
-    padding-top: var(--py-panel-pad);
-    padding-bottom: var(--py-panel-pad);
   }
 }
 

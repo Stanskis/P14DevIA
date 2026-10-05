@@ -62,10 +62,7 @@ export default function LoginForm() {
   };
 
   return (
-    <main
-      className="flex min-h-screen items-center justify-center bg-slate-dark px-4"
-      style={gridBackground}
-    >
+    <main className="flex min-h-screen items-center justify-center bg-slate-dark px-4 grid-background">
       <form
         onSubmit={
           step === 'email'

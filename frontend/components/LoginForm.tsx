@@ -3,22 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { authApi } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import type { FormFields } from '@/types/types';
-
-const gridBackground = {
-  backgroundImage:
-    'linear-gradient(#34343c 2px, transparent 2px), linear-gradient(90deg, #34343c 2px, transparent 2px)',
-  backgroundSize: '70px 70px',
-};
-
-const inputClass =
-  'mt-2 w-full rounded-lg bg-slate-300 px-3 py-2 text-body-xs text-slate-dark outline-none placeholder:text-slate-700 focus:ring-2 focus:ring-brand-velvet';
 
 export default function LoginForm() {
   const router = useRouter();
   const [step, setStep] = useState<'email' | 'password'>('email');
   const [error, setError] = useState<string | null>(null);
+  const { login } = useAuth();
 
   const {
     register,
@@ -41,23 +33,16 @@ export default function LoginForm() {
     setError(null);
 
     try {
-      const response = await authApi.login({
+      await login({
         email: data.email,
         password: data.password,
       });
 
-      if (!response.ok) {
-        setStep('email');
-        setValue('password', '');
-        setError('Email ou mot de passe incorrect');
-        return;
-      }
-
-      if (response.user) {
-        router.replace('/');
-      }
+      router.push('/');
     } catch (err: any) {
-      setError(err?.message || 'Erreur lors de la connexion');
+      setStep('email');
+      setValue('password', '');
+      setError(err?.message || 'Email ou mot de passe incorrect');
     }
   };
 
@@ -92,7 +77,7 @@ export default function LoginForm() {
               autoFocus
               autoComplete="email"
               placeholder="votre.email@exemple.com"
-              className={inputClass}
+              className="mt-2 w-full rounded-lg bg-slate-300 px-3 py-2 text-body-xs text-slate-dark outline-none placeholder:text-slate-700 focus:ring-2 focus:ring-brand-velvet"
               {...register('email', { required: "L'email est requis" })}
             />
             {errors.email && (
@@ -116,7 +101,7 @@ export default function LoginForm() {
               type="password"
               autoFocus
               autoComplete="current-password"
-              className={inputClass}
+              className="mt-2 w-full rounded-lg bg-slate-300 px-3 py-2 text-body-xs text-slate-dark outline-none placeholder:text-slate-700 focus:ring-2 focus:ring-brand-velvet"
               {...register('password', { required: 'Le mot de passe est requis' })}
             />
             {errors.password && (

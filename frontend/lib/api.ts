@@ -1,4 +1,4 @@
-import type { FormFields } from '@/types/types';
+import type { FormFields, Chat } from '@/types/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -31,4 +31,19 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
 export const authApi = {
   login: (data: FormFields) =>
     fetchWithAuth('/login', { method: 'POST', body: JSON.stringify(data) }),
+};
+
+export const chatsApi = {
+  getChats: (): Promise<Chat[]> => fetchWithAuth('/chats', { method: 'GET' }),
+
+  createChat: (): Promise<Chat> => fetchWithAuth('/chats', { method: 'POST' }),
+
+  getChatById: (chatId: number): Promise<Chat> =>
+    fetchWithAuth(`/chats/${chatId}`, { method: 'GET' }),
+
+  sendMessage: (chatId: number, content: string): Promise<Chat> =>
+    fetchWithAuth(`/chats/${chatId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    }),
 };

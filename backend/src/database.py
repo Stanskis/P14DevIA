@@ -1,14 +1,17 @@
 import os
-import bcrypt
-from dotenv import load_dotenv
-from sqlmodel import SQLModel, Session, create_engine, select
 
-from .models import User
+from sqlmodel import Session, SQLModel, create_engine, select
 
-load_dotenv()
+from src.models import User
+from src.security import hash_password
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.environ["DATABASE_URL"]
 engine = create_engine(DATABASE_URL, echo=True)
+
+
+def get_session():
+    with Session(engine) as session:
+        yield session
 
 
 def init_db():
@@ -18,18 +21,13 @@ def init_db():
     default_password = "test"
 
     with Session(engine) as session:
-        statement = select(User).where(User.email == default_email)
-        user = session.exec(statement).first()
-
+        user = session.exec(select(User).where(
+            User.email == default_email)).first()
         if not user:
-            hashed_bytes = bcrypt.hashpw(
-                default_password.encode("utf-8"),
-                bcrypt.gensalt()
-            )
             session.add(
                 User(
                     email=default_email,
-                    hashed_password=hashed_bytes.decode("utf-8"),
+                    hashed_password=hash_password(default_password),
                 )
             )
             session.commit()

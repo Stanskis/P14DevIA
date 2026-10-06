@@ -11,4 +11,7 @@ dependencies = [
     "psycopg2-binary>=2.9.9",
     "bcrypt>=4.3.0",
     "pyjwt>=2.15.1",
+    "pydantic-ai>=2.27.1",
+    "pydantic-ai-slim[google,mistral]>=2.27.1",
+    "mistralai>=1.0.0",
 ]

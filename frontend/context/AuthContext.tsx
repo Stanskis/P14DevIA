@@ -6,6 +6,7 @@ import type { FormFields } from '@/types/types';
 interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (data: FormFields) => Promise<any>;
   logout: () => void;
 }
@@ -14,12 +15,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     if (savedToken) {
       setToken(savedToken);
     }
+
+    setIsLoading(false);
   }, []);
 
   const login = async (data: FormFields) => {
@@ -45,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         token,
         isAuthenticated: !!token,
+        isLoading,
         login,
         logout,
       }}

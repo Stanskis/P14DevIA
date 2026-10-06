@@ -1,4 +1,10 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+
 export default function NotFound() {
+  const router = useRouter();
+
   return (
     <div className="flex flex-col items-center justify-center flex-1 px-6 py-12 grid-background">
       <div className="w-full max-w-sm rounded-2xl bg-slate-white p-8">
@@ -8,6 +14,16 @@ export default function NotFound() {
           <p className="text-gray-600">
             La page que vous recherchez n'existe pas ou a été déplacée.
           </p>
+
+          <div className="pt-4 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="w-full py-2 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition-colors cursor-pointer"
+            >
+              Retour
+            </button>
+          </div>
         </div>
       </div>
     </div>

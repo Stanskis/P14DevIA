@@ -38,7 +38,7 @@ export default function LoginForm() {
         password: data.password,
       });
 
-      router.push('/');
+      router.replace('/');
     } catch (err: any) {
       setStep('email');
       setValue('password', '');

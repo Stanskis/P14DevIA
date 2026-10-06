@@ -12,15 +12,15 @@ const conversations = Array.from({ length: 8 }, (_, i) => ({
 
 export default function Home() {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
+    if (!isLoading && !isAuthenticated) {
+      router.replace('/login');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isLoading, router]);
 
-  if (!isAuthenticated) {
+  if (isLoading || !isAuthenticated) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-dark text-slate-white">
         <p className="text-body-s">Chargement…</p>

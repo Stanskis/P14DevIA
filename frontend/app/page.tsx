@@ -16,11 +16,10 @@ export default function Home() {
   const [activeChatId, setActiveChatId] = useState<number | null>(null);
   const [isChatsLoading, setIsChatsLoading] = useState<boolean>(true);
 
-  const loadChats = async () => {
+  const loadChats = async (showLoader = false) => {
     try {
-      setIsChatsLoading(true);
-      const userChats = await chatsApi.getChats();
-      setChats(userChats);
+      if (showLoader) setIsChatsLoading(true);
+      setChats(await chatsApi.getChats());
     } catch (error) {
       console.error('Erreur lors du chargement des chats:', error);
     } finally {
@@ -32,7 +31,7 @@ export default function Home() {
     if (!isLoading && !isAuthenticated) {
       router.replace('/login');
     } else if (isAuthenticated) {
-      loadChats();
+      loadChats(true);
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -64,7 +63,7 @@ export default function Home() {
             setChats((prev) => [newChat, ...prev]);
             setActiveChatId(newChat.id);
           }}
-          onChatUpdated={loadChats}
+          onChatUpdated={() => loadChats()}
         />
       </main>
     </div>

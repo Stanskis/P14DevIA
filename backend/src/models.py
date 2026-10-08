@@ -33,6 +33,7 @@ class Chat(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", index=True)
     created_at: datetime = Field(default_factory=get_utc_now)
     messages: list[dict] = Field(default=[], sa_column=Column(JSON))
+    system_prompt: str | None = Field(default=None)
 
 
 class ChatResponse(SQLModel):

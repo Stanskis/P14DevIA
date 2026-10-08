@@ -1,3 +1,6 @@
+from src.models import Chat
+
+
 def test_create_chat(client, headers_a):
     res = client.post("/chats", headers=headers_a)
     assert res.status_code == 201
@@ -37,3 +40,17 @@ def test_system_prompt_is_hidden(client, headers_a):
 
     contents = [m["content"] for m in res.json()["messages"]]
     assert not any("assistant IA de NewsFoundry" in c for c in contents)
+
+
+def test_system_prompt_saved_and_frozen(client, headers_a, session):
+    chat_id = client.post("/chats", headers=headers_a).json()["id"]
+    client.post(f"/chats/{chat_id}/messages",
+                json={"content": "Salut"}, headers=headers_a)
+
+    saved = session.get(Chat, chat_id).system_prompt
+    assert "Titre test" in saved
+
+    client.post(f"/chats/{chat_id}/messages",
+                json={"content": "Encore"}, headers=headers_a)
+    session.expire_all()
+    assert session.get(Chat, chat_id).system_prompt == saved

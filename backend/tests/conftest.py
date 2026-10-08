@@ -17,6 +17,7 @@ from src.main import app  # noqa: E402
 from src.models import User  # noqa: E402
 from src.security import hash_password  # noqa: E402
 
+
 models.ALLOW_MODEL_REQUESTS = False
 
 
@@ -36,10 +37,23 @@ def session():
 
 
 @pytest.fixture
-def client(session):
+def client(session, monkeypatch):
+
+    async def fake_news():
+        return "Titre test\nRésumé test"
+
+    monkeypatch.setattr(
+        "src.routes.chats.fetch_top_news",
+        fake_news,
+    )
+
     app.dependency_overrides[get_session] = lambda: session
-    with news_agent.override(model=TestModel(custom_output_text="Réponse de test")):
+
+    with news_agent.override(
+        model=TestModel(custom_output_text="Réponse de test")
+    ):
         yield TestClient(app)
+
     app.dependency_overrides.clear()
 
 

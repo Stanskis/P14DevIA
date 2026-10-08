@@ -6,10 +6,11 @@ from pydantic_ai.exceptions import ModelHTTPError
 from pydantic_ai.messages import ModelMessage, ModelMessagesTypeAdapter
 from sqlmodel import Session, select
 
-from src.agent import news_agent
+from src.agent import news_agent, AGENT_PROMPT, build_system_prompt
 from src.auth import get_current_user
 from src.database import get_session
 from src.models import Chat, ChatResponse, MessageRequest, User
+from src.news import fetch_top_news
 
 router = APIRouter(prefix="/chats", tags=["chats"])
 
@@ -31,10 +32,10 @@ def get_own_chat(chat_id: int, user: User, session: Session) -> Chat:
     return chat
 
 
-async def run_agent(content: str, history: list[ModelMessage], retries: int = 3):
+async def run_agent(content: str, history: list[ModelMessage], system_prompt: str, retries: int = 3, ):
     for attempt in range(retries):
         try:
-            return await news_agent.run(content, message_history=history)
+            return await news_agent.run(content, message_history=history, deps=system_prompt)
         except ModelHTTPError as e:
             if e.status_code not in RETRY_CODES:
                 raise
@@ -99,9 +100,15 @@ async def send_message(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Erreur lors du chargement de l'historique du chat",
             )
+    if not chat.system_prompt:
+        news = await fetch_top_news()
+        if news:
+            chat.system_prompt = build_system_prompt(news)
+
+    system_prompt = chat.system_prompt or AGENT_PROMPT
 
     # Exécution de l'agent IA avec l'historique
-    result = await run_agent(body.content, history)
+    result = await run_agent(body.content, history, system_prompt)
 
     # Sérialisation pour la colonne JSON / JSONB
     chat.messages = ModelMessagesTypeAdapter.dump_python(

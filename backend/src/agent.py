@@ -1,37 +1,32 @@
 import os
-import time
 
 from dotenv import load_dotenv
-from fastapi import HTTPException
-from pydantic_ai import Agent
-from pydantic_ai.exceptions import ModelHTTPError
-
+from pydantic_ai import Agent, RunContext
 load_dotenv()
 
-SYSTEM_PROMPT = (
+AGENT_PROMPT = (
     "Vous êtes l'assistant IA de NewsFoundry, un outil spécialisé dans la revue de presse "
     "et l'analyse d'actualités. Vos réponses doivent être concises, professionnelles, "
-    "factuelles et rédigées en français."
+    "factuelles et rédigées en français. "
+    "IMPORTANT : réponds toujours en texte brut, sans aucun formatage Markdown "
+    "(pas de **, *, #, _). Utilise uniquement des tirets simples (-) pour les listes."
 )
 
 news_agent = Agent(
     os.getenv("LLM_MODEL"),
-    system_prompt=SYSTEM_PROMPT,
+    deps_type=str,
 )
 
-RETRY_CODES = {429, 500, 503}
+
+@news_agent.instructions
+def instructions(ctx: RunContext[str]) -> str:
+    return ctx.deps
 
 
-def run_agent_with_retry(prompt: str, retries: int = 3):
-    for attempt in range(retries):
-        try:
-            return news_agent.run_sync(prompt)
-        except ModelHTTPError as e:
-            if e.status_code not in RETRY_CODES:
-                raise
-            if attempt == retries - 1:
-                raise HTTPException(
-                    status_code=503,
-                    detail="Le service IA est temporairement indisponible, réessayez dans un instant.",
-                )
-            time.sleep(2 ** (attempt + 1))
+def build_system_prompt(news) -> str:
+    """Construit le prompt système pour l'agent d'actualités."""
+    return (
+        f"{AGENT_PROMPT}\n\n"
+        f"Les actualités du jour. Utilise-les pour répondre aux questions "
+        f"sur l'actualité : {news}"
+    )

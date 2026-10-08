@@ -13,7 +13,7 @@ dependencies = [
     "pyjwt>=2.15.1",
     "pydantic-ai>=2.27.1",
     "pydantic-ai-slim[google,mistral]>=2.27.1",
-    "mistralai>=1.0.0",
+    "httpx>=0.28.1",
 ]
 
 [dependency-groups]

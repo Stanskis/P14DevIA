@@ -37,6 +37,7 @@ async def run_agent(content: str, history: list[ModelMessage], system_prompt: st
         try:
             return await news_agent.run(content, message_history=history, deps=system_prompt)
         except ModelHTTPError as e:
+            print("LLM ERROR:", e.status_code, e.body)
             if e.status_code not in RETRY_CODES:
                 raise
             if attempt == retries - 1:

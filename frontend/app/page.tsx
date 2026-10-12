@@ -59,6 +59,7 @@ export default function Home() {
       <main className="flex min-w-0 flex-1 flex-col bg-slate-400">
         <ChatPanel
           chatId={activeChatId}
+          onNewChat={handleStartNewChat}
           onChatCreated={(newChat) => {
             setChats((prev) => [newChat, ...prev]);
             setActiveChatId(newChat.id);

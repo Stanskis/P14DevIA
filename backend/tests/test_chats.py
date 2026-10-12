@@ -1,4 +1,23 @@
 from src.models import Chat
+from pydantic_ai.models.test import TestModel
+
+from src.agent import news_agent
+
+
+def test_agent_calls_search_tool(client, headers_a):
+    chat_id = client.post("/chats", headers=headers_a).json()["id"]
+    model = TestModel(call_tools=["search_news"], custom_output_text="Voici")
+
+    with news_agent.override(model=model):
+        res = client.post(
+            f"/chats/{chat_id}/messages",
+            json={"content": "Plus d'infos sur les retraites"},
+            headers=headers_a,
+        )
+
+    assert res.status_code == 200
+    # outil appelé, mais l'utilisateur ne voit que la question et la réponse
+    assert [m["role"] for m in res.json()["messages"]] == ["user", "assistant"]
 
 
 def test_create_chat(client, headers_a):

@@ -8,12 +8,14 @@ type Tab = 'chat' | 'revues';
 
 interface ChatPanelProps {
   chatId: number | null;
+  onNewChat?: () => void;
   onChatCreated?: (newChat: Chat) => void;
   onChatUpdated?: () => void;
 }
 
 export default function ChatPanel({
   chatId,
+  onNewChat,
   onChatCreated,
   onChatUpdated,
 }: ChatPanelProps) {
@@ -23,8 +25,25 @@ export default function ChatPanel({
   const [isSending, setIsSending] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewTheme, setReviewTheme] = useState('');
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const skipNextFetch = useRef(false);
+
+  const inConversation = tab === 'chat' && (chatId !== null || messages.length > 0);
+
+  const closeReviewModal = () => {
+    setShowReviewModal(false);
+    setReviewTheme('');
+  };
+
+  const handleGenerateReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewTheme.trim()) return;
+    // TODO: appeler l'API de génération de revue de presse (étape suivante)
+    closeReviewModal();
+  };
 
   useEffect(() => {
     if (!chatId) {
@@ -101,22 +120,37 @@ export default function ChatPanel({
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex gap-2 border-b border-slate-300 bg-slate-100 px-4 py-5">
-        <button
-          type="button"
-          onClick={() => setTab('chat')}
-          className={tabClass(tab === 'chat')}
-        >
-          💬 Chat
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('revues')}
-          className={tabClass(tab === 'revues')}
-        >
-          📰 Revue de presse
-        </button>
-      </header>
+      {inConversation ? (
+        <header className="flex items-center justify-between border-b border-slate-300 bg-slate-100 px-4 py-3">
+          <button
+            type="button"
+            onClick={onNewChat}
+            aria-label="Retour, nouvelle discussion"
+            className="flex cursor-pointer items-center gap-3 text-start text-brand-velvet"
+          >
+            <span aria-hidden="true" className="text-body-m">
+              ←
+            </span>
+            <span>
+              <span className="block text-body-s text-slate-dark">
+                Nouvelle discussion
+              </span>
+              <span className="block text-body-2xs text-slate-700">
+                Conversation active
+              </span>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowReviewModal(true)}
+            className="cursor-pointer rounded-lg bg-brand-velvet px-4 py-3 text-body-xs text-slate-white"
+          >
+            📄 Générer une revue de presse
+          </button>
+        </header>
+      ) : (
+        <header className="flex gap-2 border-b border-slate-300 bg-slate-100 px-4 py-5"></header>
+      )}
 
       <section className="flex flex-1 flex-col overflow-y-auto p-6">
         {tab === 'chat' ? (
@@ -216,6 +250,52 @@ export default function ChatPanel({
           ✉️
         </button>
       </form>
+      {showReviewModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="review-title"
+          className="fixed inset-0 z-10 flex items-center justify-center bg-slate-dark/60 p-4"
+        >
+          <div className="relative w-full max-w-lg rounded-2xl bg-slate-white p-10">
+            <button
+              type="button"
+              onClick={closeReviewModal}
+              className="absolute right-6 top-5 cursor-pointer text-body-xs text-slate-700 hover:text-slate-dark"
+            >
+              Fermer
+            </button>
+            <h2
+              id="review-title"
+              className="text-center text-heading-s font-semibold text-slate-dark"
+            >
+              Générer une revue de presse
+            </h2>
+            <p className="mt-2 text-center text-body-xs text-slate-700">
+              Donner un titre à votre revue de presse
+            </p>
+            <form onSubmit={handleGenerateReview} className="mt-8">
+              <label htmlFor="review-theme" className="block text-body-s text-slate-dark">
+                Thème de la revue de presse
+              </label>
+              <input
+                id="review-theme"
+                autoFocus
+                value={reviewTheme}
+                onChange={(e) => setReviewTheme(e.target.value)}
+                className="mt-2 w-full rounded-lg bg-slate-300 px-3 py-2 text-body-xs text-slate-dark outline-none focus:ring-2 focus:ring-brand-velvet"
+              />
+              <button
+                type="submit"
+                disabled={!reviewTheme.trim()}
+                className="mt-4 w-full cursor-pointer rounded-md bg-slate-dark py-3 text-body-xs text-slate-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Générer
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

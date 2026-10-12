@@ -39,6 +39,11 @@ def session():
 @pytest.fixture
 def client(session, monkeypatch):
 
+    async def fake_search(query, language="fr", number=5, days=None):
+        return [{"title": "Article test", "summary": "Résumé", "publish_date": "2026-10-10", "url": "http://x"}]
+
+    monkeypatch.setattr("src.agent.search_news_articles", fake_search)
+
     async def fake_news():
         return "Titre test\nRésumé test"
 

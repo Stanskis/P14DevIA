@@ -178,7 +178,7 @@ export default function ChatPanel({
           )
         ) : (
           <div className="flex h-full items-center justify-center">
-            <p className="text-body-s text-slate-700">Revues de presse (à venir)</p>
+            <p className="text-body-s text-slate-700">Revues de presse</p>
           </div>
         )}
       </section>

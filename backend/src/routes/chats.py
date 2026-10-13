@@ -37,6 +37,7 @@ async def with_retry(call, retries: int = 3):
         try:
             return await call()
         except ModelHTTPError as e:
+            print("IA error", e.status_code, e.body)
             if e.status_code not in RETRY_CODES:
                 raise
             if attempt == retries - 1:

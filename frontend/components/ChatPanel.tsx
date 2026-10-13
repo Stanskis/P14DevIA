@@ -37,9 +37,25 @@ export default function ChatPanel({
   const inConversation = tab === 'chat' && (chatId !== null || messages.length > 0);
 
   const closeReviewModal = () => {
+    if (isGenerating) return;
     setShowReviewModal(false);
     setReviewTheme('');
   };
+
+  const openReviewModal = () => {
+    setError(null);
+    setShowReviewModal(true);
+  };
+
+  // Fermeture de la modale avec Échap
+  useEffect(() => {
+    if (!showReviewModal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeReviewModal();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
 
   useEffect(() => {
     if (tab !== 'revues') return;
@@ -57,8 +73,9 @@ export default function ChatPanel({
       setIsGenerating(true);
       setError(null);
       await chatsApi.generateReview(chatId, reviewTheme.trim());
-      closeReviewModal();
-      setTab('revues'); // эффект выше подгрузит список с новой revue
+      setShowReviewModal(false);
+      setReviewTheme('');
+      setTab('revues');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la génération');
     } finally {
@@ -139,10 +156,14 @@ export default function ChatPanel({
         : 'bg-slate-200 text-slate-dark'
     }`;
 
+  // Même hauteur pour les deux en-têtes (et pour le logo du menu : h-20)
+  const headerClass =
+    'flex h-20 items-center border-b border-slate-300 bg-slate-100 px-4';
+
   return (
     <div className="flex h-full flex-col">
       {inConversation ? (
-        <header className="flex items-center justify-between border-b border-slate-300 bg-slate-100 px-4 py-3">
+        <header className={`${headerClass} justify-between`}>
           <button
             type="button"
             onClick={onNewChat}
@@ -163,14 +184,29 @@ export default function ChatPanel({
           </button>
           <button
             type="button"
-            onClick={() => setShowReviewModal(true)}
-            className="cursor-pointer rounded-lg bg-brand-velvet px-4 py-3 text-body-xs text-slate-white"
+            onClick={openReviewModal}
+            className="cursor-pointer rounded-lg bg-brand-velvet px-4 py-panel-pad text-body-xs text-slate-white"
           >
             📄 Générer une revue de presse
           </button>
         </header>
       ) : (
-        <header className="flex gap-2 border-b border-slate-300 bg-slate-100 px-4 py-5"></header>
+        <header className={`${headerClass} gap-2`}>
+          <button
+            type="button"
+            onClick={() => setTab('chat')}
+            className={tabClass(tab === 'chat')}
+          >
+            💬 Chat
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('revues')}
+            className={tabClass(tab === 'revues')}
+          >
+            📰 Revue de presse
+          </button>
+        </header>
       )}
 
       <section className="flex flex-1 flex-col overflow-y-auto p-6">
@@ -210,9 +246,9 @@ export default function ChatPanel({
                   }`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-xl px-4 py-3 text-body-xs ${
+                    className={`max-w-[80%] rounded-lg px-4 py-3 text-body-xs ${
                       msg.role === 'user'
-                        ? 'bg-brand-velvet text-slate-white'
+                        ? 'bg-slate-dark text-slate-white'
                         : 'bg-slate-white text-slate-dark shadow-sm'
                     }`}
                   >
@@ -250,7 +286,7 @@ export default function ChatPanel({
         )}
       </section>
 
-      {error && (
+      {error && !showReviewModal && (
         <p role="alert" className="bg-slate-white px-16 pt-3 text-body-xs text-red-600">
           {error}
         </p>
@@ -283,6 +319,7 @@ export default function ChatPanel({
           ✉️
         </button>
       </form>
+
       {showReviewModal && (
         <div
           role="dialog"

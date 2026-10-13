@@ -23,7 +23,7 @@ export default function Menu({
 
   return (
     <aside className="flex h-screen w-72 shrink-0 flex-col border-r border-slate-300 bg-slate-100 text-start">
-      <div className="flex items-center border-b border-slate-300 px-5 py-7 text-heading-xs text-brand-velvet">
+      <div className="flex h-20 items-center border-b border-slate-300 px-5 text-heading-xs text-brand-velvet">
         NEWSFOUNDRY 🤖
       </div>
 

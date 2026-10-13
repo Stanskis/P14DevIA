@@ -3,6 +3,8 @@ import os
 from pydantic import BaseModel
 from pydantic_ai import Agent
 
+from src.agent import build_model
+
 
 class ArticleSummary(BaseModel):
     title: str
@@ -25,7 +27,7 @@ REVIEW_PROMPT = (
 )
 
 review_agent = Agent(
-    os.getenv("LLM_MODEL", "google:gemini-3.6-flash"),
+    build_model(),
     output_type=PressReview,
-    instructions=REVIEW_PROMPT,  # output
+    instructions=REVIEW_PROMPT,
 )

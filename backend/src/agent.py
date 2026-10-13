@@ -3,6 +3,8 @@ import os
 from dotenv import load_dotenv
 from pydantic_ai import Agent, RunContext
 from src.news import search_news
+from pydantic_ai.models.fallback import FallbackModel
+
 load_dotenv()
 
 AGENT_PROMPT = (
@@ -13,8 +15,17 @@ AGENT_PROMPT = (
     "(pas de **, *, #, _). Utilise uniquement des tirets simples (-) pour les listes."
 )
 
+
+def build_model():
+    primary = os.getenv("LLM_MODEL", "google:gemini-3.6-flash")
+    fallback = os.getenv("LLM_FALLBACK_MODEL")
+    if fallback:
+        return FallbackModel(primary, fallback)
+    return primary
+
+
 news_agent = Agent(
-    os.getenv("LLM_MODEL"),
+    build_model(),
     deps_type=str,
 )
 

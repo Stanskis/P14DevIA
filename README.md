@@ -6,11 +6,11 @@ qui connaît l'actualité du jour (World News API), peut approfondir un sujet
 
 ## Documentation
 
-| Fichier | Contenu |
-|---|---|
-| `README.md` | Installation, lancement, tests (ce fichier) |
+| Fichier                                        | Contenu                                               |
+| ---------------------------------------------- | ----------------------------------------------------- |
+| `README.md`                                    | Installation, lancement, tests (ce fichier)           |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Structure du code, modèle de données, routes de l'API |
-| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Choix techniques, raisons, limites connues |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md)       | Choix techniques, raisons, limites connues            |
 
 ## Stack
 
@@ -65,21 +65,21 @@ uv run --env-file .env uvicorn src.main:app --reload
 
 L'API écoute sur <http://localhost:8000> (documentation interactive : `/docs`).
 Au démarrage, les tables sont créées et un utilisateur de développement
-est ajouté : `test@test.com` / `test`.
+est ajouté : `Compte: test@test.com` / `Mot de passe: test`.
 
 #### Variables d'environnement (`backend/.env`)
 
-| Variable | Rôle | Obligatoire |
-|---|---|---|
-| `DATABASE_URL` | Connexion PostgreSQL, ex. `postgresql://user:password@127.0.0.1:5432/newsfoundry` | oui |
-| `SECRET_KEY` | Clé de signature des JWT (32 caractères minimum) | oui |
-| `LLM_MODEL` | Modèle principal, ex. `google:gemini-3.6-flash` | oui |
-| `LLM_FALLBACK_MODEL` | Modèle de secours utilisé si le principal échoue | non |
-| `GOOGLE_API_KEY` | Clé Gemini | oui |
-| `WORLD_NEWS_API_KEY` | Clé World News API | oui (sans elle, l'agent répond sans actualités) |
-| `ALGORITHM` | Algorithme JWT (défaut `HS256`) | non |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Durée de vie du token (défaut `720`) | non |
-| `CORS_ORIGINS` | Origines autorisées, séparées par des virgules (défaut `http://localhost:3000`) | non |
+| Variable                      | Rôle                                                                              | Obligatoire                                     |
+| ----------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `DATABASE_URL`                | Connexion PostgreSQL, ex. `postgresql://user:password@127.0.0.1:5432/newsfoundry` | oui                                             |
+| `SECRET_KEY`                  | Clé de signature des JWT (32 caractères minimum)                                  | oui                                             |
+| `LLM_MODEL`                   | Modèle principal, ex. `google:gemini-3.6-flash`                                   | oui                                             |
+| `LLM_FALLBACK_MODEL`          | Modèle de secours utilisé si le principal échoue                                  | non                                             |
+| `GOOGLE_API_KEY`              | Clé Gemini                                                                        | oui                                             |
+| `WORLD_NEWS_API_KEY`          | Clé World News API                                                                | oui (sans elle, l'agent répond sans actualités) |
+| `ALGORITHM`                   | Algorithme JWT (défaut `HS256`)                                                   | non                                             |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Durée de vie du token (défaut `720`)                                              | non                                             |
+| `CORS_ORIGINS`                | Origines autorisées, séparées par des virgules (défaut `http://localhost:3000`)   | non                                             |
 
 Générer une `SECRET_KEY` :
 
@@ -103,11 +103,11 @@ Application sur <http://localhost:3000>.
 
 ## Déploiement
 
-| Partie | Hébergeur | Détails |
-|---|---|---|
-| Frontend (Next.js) | Vercel | dossier racine `frontend`, déploiement automatique à chaque `push` |
-| Backend (FastAPI) | Railway | dossier racine `backend`, déploiement automatique à chaque `push` |
-| Base de données | Railway (PostgreSQL) | `DATABASE_URL` fournie par Railway |
+| Partie             | Hébergeur            | Détails                                                            |
+| ------------------ | -------------------- | ------------------------------------------------------------------ |
+| Frontend (Next.js) | Vercel               | dossier racine `frontend`, déploiement automatique à chaque `push` |
+| Backend (FastAPI)  | Railway              | dossier racine `backend`, déploiement automatique à chaque `push`  |
+| Base de données    | Railway (PostgreSQL) | `DATABASE_URL` fournie par Railway                                 |
 
 ### Backend sur Railway
 

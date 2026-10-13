@@ -34,6 +34,11 @@ class Chat(SQLModel, table=True):
     created_at: datetime = Field(default_factory=get_utc_now)
     messages: list[dict] = Field(default=[], sa_column=Column(JSON))
     system_prompt: str | None = Field(default=None)
+    review_title: str | None = Field(default=None)
+    review_summary: str | None = Field(default=None)
+    review_articles: list[dict] | None = Field(
+        default=None, sa_column=Column(JSON))
+    review_created_at: datetime | None = Field(default=None)
 
 
 class ChatResponse(SQLModel):
@@ -46,6 +51,24 @@ class ChatResponse(SQLModel):
     @classmethod
     def hide_internal_parts(cls, v):
         return to_display_messages(v or [])
+
+
+class ArticleOut(SQLModel):
+    title: str
+    summary: str
+    url: str | None = None
+
+
+class ReviewResponse(SQLModel):
+    chat_id: int
+    title: str
+    summary: str
+    articles: list[ArticleOut]
+    created_at: datetime
+
+
+class ReviewRequest(SQLModel):
+    theme: str
 
 
 class MessageRequest(SQLModel):

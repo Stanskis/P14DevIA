@@ -38,27 +38,18 @@ def session():
 
 @pytest.fixture
 def client(session, monkeypatch):
+    async def fake_news():
+        return "- Titre test : Résumé test"
 
     async def fake_search(query, language="fr", number=5, days=None):
         return [{"title": "Article test", "summary": "Résumé", "publish_date": "2026-10-10", "url": "http://x"}]
 
-    monkeypatch.setattr("src.agent.search_news_articles", fake_search)
-
-    async def fake_news():
-        return "Titre test\nRésumé test"
-
-    monkeypatch.setattr(
-        "src.routes.chats.fetch_top_news",
-        fake_news,
-    )
+    monkeypatch.setattr("src.routes.chats.fetch_top_news", fake_news)
+    monkeypatch.setattr("src.agent.search_news", fake_search)
 
     app.dependency_overrides[get_session] = lambda: session
-
-    with news_agent.override(
-        model=TestModel(custom_output_text="Réponse de test")
-    ):
+    with news_agent.override(model=TestModel(custom_output_text="Réponse de test")):
         yield TestClient(app)
-
     app.dependency_overrides.clear()
 
 

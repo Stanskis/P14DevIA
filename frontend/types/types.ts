@@ -16,3 +16,12 @@ export interface Chat {
   created_at: string;
   messages: Message[];
 }
+
+export type ArticleSummary = { title: string; summary: string; url: string | null };
+export type Review = {
+  chat_id: number;
+  title: string;
+  summary: string;
+  articles: ArticleSummary[];
+  created_at: string;
+};

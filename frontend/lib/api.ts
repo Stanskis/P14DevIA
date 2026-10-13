@@ -1,4 +1,4 @@
-import type { FormFields, Chat } from '@/types/types';
+import type { FormFields, Chat, Review } from '@/types/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -46,4 +46,14 @@ export const chatsApi = {
       method: 'POST',
       body: JSON.stringify({ content }),
     }),
+
+  generateReview: (chatId: number, theme: string): Promise<Review> =>
+    fetchWithAuth(`/chats/${chatId}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ theme }),
+    }),
+};
+
+export const reviewsApi = {
+  getReviews: (): Promise<Review[]> => fetchWithAuth('/reviews', { method: 'GET' }),
 };

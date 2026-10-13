@@ -4,9 +4,10 @@ from pydantic_ai.models.test import TestModel
 from src.agent import news_agent
 
 
-def test_agent_calls_search_tool(client, headers_a):
+def test_agent_calls_search_tool(client, headers_a, session):
     chat_id = client.post("/chats", headers=headers_a).json()["id"]
-    model = TestModel(call_tools=["search_news"], custom_output_text="Voici")
+    model = TestModel(call_tools=["search_news_tool"],
+                      custom_output_text="Voici")
 
     with news_agent.override(model=model):
         res = client.post(
@@ -16,8 +17,10 @@ def test_agent_calls_search_tool(client, headers_a):
         )
 
     assert res.status_code == 200
-    # outil appelé, mais l'utilisateur ne voit que la question et la réponse
+    # l'utilisateur ne voit que la question et la réponse
     assert [m["role"] for m in res.json()["messages"]] == ["user", "assistant"]
+    # mais l'outil a bien été appelé : il est dans l'historique sauvegardé
+    assert "search_news_tool" in str(session.get(Chat, chat_id).messages)
 
 
 def test_create_chat(client, headers_a):

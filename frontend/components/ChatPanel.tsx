@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { chatsApi } from '@/lib/api';
-import type { Chat, Message } from '@/types/types';
+import { chatsApi, reviewsApi } from '@/lib/api';
+import ReviewCard from './ReviewCard';
+import type { Chat, Message, Review } from '@/types/types';
 
 type Tab = 'chat' | 'revues';
 
@@ -27,6 +28,8 @@ export default function ChatPanel({
   const [error, setError] = useState<string | null>(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewTheme, setReviewTheme] = useState('');
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const skipNextFetch = useRef(false);
@@ -38,11 +41,29 @@ export default function ChatPanel({
     setReviewTheme('');
   };
 
-  const handleGenerateReview = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (tab !== 'revues') return;
+    reviewsApi
+      .getReviews()
+      .then(setReviews)
+      .catch((err) => console.error('Erreur lors du chargement des revues:', err));
+  }, [tab]);
+
+  const handleGenerateReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!reviewTheme.trim()) return;
-    // TODO: appeler l'API de génération de revue de presse (étape suivante)
-    closeReviewModal();
+    if (!chatId || !reviewTheme.trim() || isGenerating) return;
+
+    try {
+      setIsGenerating(true);
+      setError(null);
+      await chatsApi.generateReview(chatId, reviewTheme.trim());
+      closeReviewModal();
+      setTab('revues'); // эффект выше подгрузит список с новой revue
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la génération');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   useEffect(() => {
@@ -211,8 +232,20 @@ export default function ChatPanel({
             </div>
           )
         ) : (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-body-s text-slate-700">Revues de presse</p>
+          <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+            <div>
+              <h1 className="text-heading-m text-slate-dark">Revues de Presse</h1>
+              <p className="text-body-xs text-slate-700">
+                Consultez et gérez vos revues de presse générées par l&apos;IA
+              </p>
+            </div>
+            {reviews.length === 0 ? (
+              <p className="text-body-s text-slate-700">
+                Aucune revue de presse pour le moment.
+              </p>
+            ) : (
+              reviews.map((r) => <ReviewCard key={r.chat_id} review={r} />)
+            )}
           </div>
         )}
       </section>
@@ -283,14 +316,21 @@ export default function ChatPanel({
                 autoFocus
                 value={reviewTheme}
                 onChange={(e) => setReviewTheme(e.target.value)}
-                className="mt-2 w-full rounded-lg bg-slate-300 px-3 py-2 text-body-xs text-slate-dark outline-none focus:ring-2 focus:ring-brand-velvet"
+                disabled={isGenerating}
+                className="mt-2 w-full rounded-lg bg-slate-300 px-3 py-2 text-body-xs text-slate-dark outline-none focus:ring-2 focus:ring-brand-velvet disabled:opacity-50"
               />
+
+              {error && (
+                <p role="alert" className="mt-3 text-body-xs text-red-600">
+                  {error}
+                </p>
+              )}
               <button
                 type="submit"
-                disabled={!reviewTheme.trim()}
+                disabled={!reviewTheme.trim() || isGenerating}
                 className="mt-4 w-full cursor-pointer rounded-md bg-slate-dark py-3 text-body-xs text-slate-white disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Générer
+                {isGenerating ? 'Génération…' : 'Générer'}
               </button>
             </form>
           </div>

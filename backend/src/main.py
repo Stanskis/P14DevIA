@@ -7,6 +7,7 @@ from src.auth import router as auth_router
 from src.config import CORS_ORIGINS
 from src.database import init_db
 from src.routes.chats import router as chats_router
+from src.routes.reviews import router as reviews_router
 
 
 @asynccontextmanager
@@ -27,6 +28,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(chats_router)
+app.include_router(reviews_router)
 
 
 @app.get("/")

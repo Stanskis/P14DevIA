@@ -32,12 +32,11 @@ def get_own_chat(chat_id: int, user: User, session: Session) -> Chat:
     return chat
 
 
-async def run_agent(content: str, history: list[ModelMessage], system_prompt: str, retries: int = 3, ):
+async def with_retry(call, retries: int = 3):
     for attempt in range(retries):
         try:
-            return await news_agent.run(content, message_history=history, deps=system_prompt)
+            return await call()
         except ModelHTTPError as e:
-            print("LLM ERROR:", e.status_code, e.body)
             if e.status_code not in RETRY_CODES:
                 raise
             if attempt == retries - 1:
@@ -45,7 +44,26 @@ async def run_agent(content: str, history: list[ModelMessage], system_prompt: st
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail="Le service IA est temporairement indisponible, réessayez dans un instant.",
                 )
-            await asyncio.sleep(2 ** (attempt + 1))  # 2 s, 4 s
+            await asyncio.sleep(2 ** (attempt + 1))
+
+
+async def run_agent(content: str, history: list[ModelMessage], system_prompt: str):
+    return await with_retry(
+        lambda: news_agent.run(
+            content, message_history=history, deps=system_prompt)
+    )
+
+
+def load_history(chat: Chat) -> list[ModelMessage]:
+    if not chat.messages:
+        return []
+    try:
+        return ModelMessagesTypeAdapter.validate_python(chat.messages)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erreur lors du chargement de l'historique du chat",
+        )
 
 
 @router.get("", response_model=List[ChatResponse])

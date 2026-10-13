@@ -8,3 +8,11 @@ export function formatChatDate(iso: string): string {
     year: 'numeric',
   }).format(date);
 }
+
+export function formatTime(iso: string): string {
+  const hasZone = /Z|[+-]\d{2}:\d{2}$/.test(iso);
+  const date = new Date(hasZone ? iso : `${iso}Z`);
+  return new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(
+    date,
+  );
+}

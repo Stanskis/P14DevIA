@@ -1,67 +1,168 @@
 # NewsFoundry
 
-## Besoins fonctionnels
+Assistant de revue de presse basé sur un LLM. L'utilisateur discute avec un agent
+qui connaît l'actualité du jour (World News API), peut approfondir un sujet
+(recherche d'articles) et générer une revue de presse à partir d'une discussion.
 
-- L'utilisateur peut se connecter.
-- L’utilisateur peut voir la liste de ses discussions passées.
-- L’utilisateur peut démarrer une nouvelle discussion ou reprendre une ancienne discussion.
-- Un utilisateur n’est pas autorisé à accéder aux discussions d’un autre utilisateur.
-- Le LLM répond aux messages envoyés par l’utilisateur.
-- L'utilisateur peut faire générer une revue de presse à partir d'une discussion.
-- L'application doit afficher des messages d'erreur à l'utilisateur final en cas d'erreur.
+## Documentation
+
+| Fichier | Contenu |
+|---|---|
+| `README.md` | Installation, lancement, tests (ce fichier) |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Structure du code, modèle de données, routes de l'API |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Choix techniques, raisons, limites connues |
+
+## Stack
+
+- **Backend** : Python 3.13, FastAPI, SQLModel, PostgreSQL 17, PydanticAI, JWT, bcrypt
+- **LLM** : Google Gemini (modèle principal + modèle de secours)
+- **Données d'actualité** : World News API (`/top-news`, `/search-news`)
+- **Frontend** : Next.js (App Router), TypeScript, Tailwind CSS
+- **Tests / CI** : pytest, GitHub Actions
+- **Déploiement** : Vercel (frontend) + Railway (backend et base PostgreSQL)
+
+## Application déployée
+
+Frontend : <https://p14-dev-ia.vercel.app>
+
+Le frontend est hébergé sur **Vercel** et appelle l'API hébergée sur **Railway**
+(voir la section « Déploiement » ci-dessous).
 
 ## Prérequis
 
 - Docker
-- Python 3.13
-- uv
-- Node.js 22.19
+- [uv](https://docs.astral.sh/uv/) (gestionnaire de dépendances Python)
+- Node.js et npm
+- Une clé API Google AI Studio : <https://aistudio.google.com/apikey>
+- Une clé API World News API : <https://worldnewsapi.com>
 
-## Installation
+## Lancer le projet
 
-1. Cloner le repository
-2. Démarrer le backend aved les instructions du fichier `backend/README.md`
-3. Initialiser un projet Next.js dans un dossier `frontend/`
+### 1. Base de données
 
-## Choix technologiques
+```bash
+docker run -d \
+  --name newsfoundry_db \
+  -e POSTGRES_USER=user \
+  -e POSTGRES_PASSWORD=password \
+  -e POSTGRES_DB=newsfoundry \
+  -p 5432:5432 \
+  postgres:17
+```
 
-### Frontend
+Si le conteneur existe déjà : `docker start newsfoundry_db`.
+Si le port 5432 est occupé par un autre projet, arrêter l'autre conteneur
+ou changer le port (et `DATABASE_URL`).
 
-**Next.js**
+### 2. Backend
 
-### Backend
+```bash
+cd backend
+cp .env.example .env      # puis renseigner les valeurs
+uv sync
+uv run --env-file .env uvicorn src.main:app --reload
+```
 
-- **Python** pour bénéficier de son écosystème de librairies IA
-- **FastAPI** pour le développement de l'API
-- Connection avec des **JWT**
-- **SQLModel** comme ORM : fait pour bien marcher avec FastAPI.
-  - Branché à une base de données **PostgreSQL**
-- **PydanticAI** comme client qui s'intégrera aussi bien avec les autres outils de la stack backend
-- Attention à la **sécurité des données**. On ne veut pas qu’un utilisateur puisse accéder aux chats d’un autre utilisateur ou les modifier.
-  - Le produit aura rapidement beaucoup d’utilisateurs professionnels il est donc crucial de garantir le fonctionnement correct de cette fonctionnalité par l'**implémentation de tests automatisés qui s'exécutent par une Github Action**.
-- Pour les sources de news, on utilisera l’API [**WorldNewsAPI**](https://worldnewsapi.com/).
-- Pour déployer on mettra le frontend sur **Vercel** et le backend sur **Railway**.
+L'API écoute sur <http://localhost:8000> (documentation interactive : `/docs`).
+Au démarrage, les tables sont créées et un utilisateur de développement
+est ajouté : `test@test.com` / `test`.
 
-### Documentation
+#### Variables d'environnement (`backend/.env`)
 
-Une documentation claire devra être rédigée et ajoutée dans un dossier `docs/`.
+| Variable | Rôle | Obligatoire |
+|---|---|---|
+| `DATABASE_URL` | Connexion PostgreSQL, ex. `postgresql://user:password@127.0.0.1:5432/newsfoundry` | oui |
+| `SECRET_KEY` | Clé de signature des JWT (32 caractères minimum) | oui |
+| `LLM_MODEL` | Modèle principal, ex. `google:gemini-3.6-flash` | oui |
+| `LLM_FALLBACK_MODEL` | Modèle de secours utilisé si le principal échoue | non |
+| `GOOGLE_API_KEY` | Clé Gemini | oui |
+| `WORLD_NEWS_API_KEY` | Clé World News API | oui (sans elle, l'agent répond sans actualités) |
+| `ALGORITHM` | Algorithme JWT (défaut `HS256`) | non |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Durée de vie du token (défaut `720`) | non |
+| `CORS_ORIGINS` | Origines autorisées, séparées par des virgules (défaut `http://localhost:3000`) | non |
 
-Elle devra inclure des suggestions d'amélioration concernant la qualité et la performance de la partie IA du système. Chaque recommandation doit être illustrée par une une métrique ou un exemple, une proposition d’implémentation réalisable, ainsi qu'un objectif mesurable.
+Générer une `SECRET_KEY` :
 
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
 
-Par ailleurs, pour faciliter la maintenance du projet à long terme, le code du projet devra être clair et bien structuré, accompagné de commentaires qui expliquent les sections de code complexes.
+> Le fichier `.env` n'est jamais versionné. Seul `.env.example` (sans valeurs) l'est.
+> Les variables sont lues au démarrage : après modification de `.env`, relancer le backend.
 
-### Deploiement
+### 3. Frontend
 
-L'url de l'application déployée devra être ajouté dans la documentation.
+```bash
+cd frontend
+npm install
+echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > .env.local
+npm run dev
+```
 
-#### Frontend
+Application sur <http://localhost:3000>.
 
-Déployer le frontend sur [Vercel](https://vercel.com/dashboard).
+## Déploiement
 
-#### Backend
+| Partie | Hébergeur | Détails |
+|---|---|---|
+| Frontend (Next.js) | Vercel | dossier racine `frontend`, déploiement automatique à chaque `push` |
+| Backend (FastAPI) | Railway | dossier racine `backend`, déploiement automatique à chaque `push` |
+| Base de données | Railway (PostgreSQL) | `DATABASE_URL` fournie par Railway |
 
-Déployer le backend sur [Railway](https://railway.com/dashboard).
+### Backend sur Railway
 
-> Un Dockerfile est déjà présent pour faciliter le déploiement. Il faudra simplement référencer `backend/` comme "Root Directory" après avoir connecté le repository.
-> La base de donnée postgres peut être créée via Railway dans le même projet que le backend.
+- Commande de démarrage (sans `--reload` ni `--env-file`) :
+
+  ```bash
+  uvicorn src.main:app --host 0.0.0.0 --port $PORT
+  ```
+
+- Les variables d'environnement se configurent dans l'onglet **Variables** de Railway
+  (mêmes noms que dans `backend/.env.example`). Sans `SECRET_KEY`, l'application
+  ne démarre pas.
+- `CORS_ORIGINS` doit contenir l'URL du frontend : `https://p14-dev-ia.vercel.app`
+  (plusieurs origines possibles, séparées par des virgules).
+
+### Frontend sur Vercel
+
+- Variable d'environnement `NEXT_PUBLIC_API_URL` : URL publique du backend Railway
+  (sans `/` final). Elle est intégrée au build : après modification, redéployer le frontend.
+
+### Points d'attention en production
+
+- `init_db` crée l'utilisateur de développement `test@test.com` au démarrage :
+  à supprimer ou à désactiver pour un usage réel.
+- Les tests (`uv run pytest -v`) tournent en CI GitHub Actions ; Vercel et Railway
+  déploient indépendamment de leur résultat.
+
+## Lancer les tests
+
+Depuis le dossier `backend` :
+
+```bash
+uv run pytest -v
+```
+
+Les tests n'ont besoin ni de Docker, ni de clés API, ni d'accès réseau :
+
+- la base est une SQLite en mémoire ;
+- le LLM est remplacé par `TestModel` de PydanticAI
+  (et `models.ALLOW_MODEL_REQUESTS = False` fait échouer tout appel réel) ;
+- les appels à la World News API sont remplacés par des fonctions factices.
+
+La même commande est exécutée en CI à chaque `push` et `pull_request`
+(`.github/workflows/tests.yml`).
+
+## Ce que couvrent les tests
+
+- création de discussion, envoi de message, réponse du LLM ;
+- conservation de l'historique entre deux messages ;
+- le prompt système n'est pas renvoyé à l'utilisateur ;
+- le prompt système (avec les actualités) est sauvegardé en base et ne change plus ;
+- l'agent appelle bien l'outil de recherche d'articles ;
+- autorisations : sans token → refusé, token invalide → 401,
+  lecture ou écriture dans la discussion d'un autre utilisateur → 403,
+  discussion inexistante → 404.
+
+La génération de revue de presse (`/chats/{id}/review`, `/reviews`) n'est pas couverte
+par des tests automatisés (voir « Limites connues » dans `docs/DECISIONS.md`).

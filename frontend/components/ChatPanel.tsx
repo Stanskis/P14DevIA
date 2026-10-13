@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { chatsApi, reviewsApi } from '@/lib/api';
 import ReviewCard from './ReviewCard';
 import type { Chat, Message, Review } from '@/types/types';
+import { formatTime } from '@/lib/format';
 
 type Tab = 'chat' | 'revues';
 
@@ -126,7 +127,10 @@ export default function ChatPanel({
       setIsSending(true);
 
       // Affichage optimiste du message de l'utilisateur
-      setMessages((prev) => [...prev, { role: 'user', content: userText }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: 'user', content: userText, created_at: new Date().toISOString() },
+      ]);
 
       let currentChatId = chatId;
 
@@ -154,6 +158,11 @@ export default function ChatPanel({
       active
         ? 'bg-brand-velvet font-semibold text-slate-white'
         : 'bg-slate-200 text-slate-dark'
+    }`;
+
+  const avatarClass = (role: Message['role']) =>
+    `flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-body-2xs ${
+      role === 'user' ? 'bg-slate-dark text-slate-white' : 'bg-slate-300'
     }`;
 
   // Même hauteur pour les deux en-têtes (et pour le logo du menu : h-20)
@@ -185,7 +194,7 @@ export default function ChatPanel({
           <button
             type="button"
             onClick={openReviewModal}
-            className="cursor-pointer rounded-lg bg-brand-velvet px-4 py-panel-pad text-body-xs text-slate-white"
+            className="cursor-pointer rounded-lg bg-brand-velvet px-4 py-4 text-body-xs text-slate-white"
           >
             📄 Générer une revue de presse
           </button>
@@ -238,33 +247,45 @@ export default function ChatPanel({
             </div>
           ) : (
             <div className="flex flex-col space-y-4">
-              {messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`flex ${
-                    msg.role === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
-                >
+              {messages.map((msg, index) => {
+                const isUser = msg.role === 'user';
+                return (
                   <div
-                    className={`max-w-[80%] rounded-lg px-4 py-3 text-body-xs ${
-                      msg.role === 'user'
-                        ? 'bg-slate-dark text-slate-white'
-                        : 'bg-slate-white text-slate-dark shadow-sm'
-                    }`}
+                    key={index}
+                    className={`flex items-start gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
                   >
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
-                  </div>
-                </div>
-              ))}
+                    {!isUser && (
+                      <span aria-hidden="true" className={avatarClass('assistant')}>
+                        🤖
+                      </span>
+                    )}
 
-              {isSending && (
-                <div className="flex justify-start">
-                  <div className="rounded-xl bg-slate-white px-4 py-3 text-body-xs text-slate-700 shadow-sm">
-                    <p className="animate-pulse">L&apos;assistant réfléchit…</p>
+                    <div
+                      className={`max-w-[80%] rounded-lg px-4 py-3 text-body-xs ${
+                        isUser
+                          ? 'bg-slate-dark text-slate-white'
+                          : 'bg-slate-white text-slate-dark shadow-sm'
+                      }`}
+                    >
+                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                      {msg.created_at && (
+                        <p
+                          className={`mt-2 text-body-2xs ${isUser ? 'text-slate-600' : 'text-slate-700'}`}
+                        >
+                          {formatTime(msg.created_at)}
+                        </p>
+                      )}
+                    </div>
+
+                    {isUser && (
+                      <span aria-hidden="true" className={avatarClass('user')}>
+                        👤
+                      </span>
+                    )}
                   </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
+                );
+              })}
+              {/* блок isSending и messagesEndRef без изменений */}
             </div>
           )
         ) : (

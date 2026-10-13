@@ -13,11 +13,13 @@ def to_display_messages(raw: list[dict]) -> list[dict]:
     for msg in raw:
         for part in msg.get("parts", []):
             kind = part.get("part_kind")
+            created_at = part.get("timestamp") or msg.get("timestamp")
             if kind == "user-prompt":
-                result.append({"role": "user", "content": part["content"]})
+                result.append(
+                    {"role": "user", "content": part["content"], "created_at": created_at})
             elif kind == "text":
                 result.append(
-                    {"role": "assistant", "content": part["content"]})
+                    {"role": "assistant", "content": part["content"], "created_at": created_at})
             # system-prompt, tool-call, tool-return are ignored for display
     return result
 

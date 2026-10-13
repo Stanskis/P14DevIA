@@ -38,8 +38,8 @@ def test_send_message_returns_llm_answer(client, headers_a):
 
     assert res.status_code == 200
     messages = res.json()["messages"]
-    assert messages[0] == {"role": "user", "content": "Salut"}
-    assert messages[-1] == {"role": "assistant", "content": "Réponse de test"}
+    assert messages[0]["role"] == "user" and messages[0]["content"] == "Salut"
+    assert messages[-1]["role"] == "assistant" and messages[-1]["content"] == "Réponse de test"
 
 
 def test_history_is_kept_between_messages(client, headers_a):

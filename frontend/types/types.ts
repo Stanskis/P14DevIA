@@ -8,7 +8,11 @@ export interface User {
   email: string;
 }
 
-export type Message = { role: 'user' | 'assistant'; content: string };
+export type Message = {
+  role: 'user' | 'assistant';
+  content: string;
+  created_at?: string | null;
+};
 
 export interface Chat {
   id: number;

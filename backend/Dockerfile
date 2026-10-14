@@ -9,4 +9,4 @@ COPY src/ ./src/
 
 EXPOSE 8000
 
-CMD uv run --frozen uvicorn src.main:app
+CMD uv run --frozen uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8000}

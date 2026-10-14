@@ -45,23 +45,23 @@ export function useChatMessages({ chatId, onChatCreated, onChatUpdated }: Option
     fetchHistory();
   }, [chatId]);
 
-  const send = async (text: string) => {
+  const send = async (text: string): Promise<boolean> => {
     const content = text.trim();
-    if (!content || isSending) return;
+    if (!content || isSending) return false;
     setError(null);
+
+    const optimistic: Message = {
+      role: 'user',
+      content,
+      created_at: new Date().toISOString(),
+    };
 
     try {
       setIsSending(true);
-
-      // Affichage optimiste du message de l'utilisateur
-      setMessages((prev) => [
-        ...prev,
-        { role: 'user', content, created_at: new Date().toISOString() },
-      ]);
+      setMessages((prev) => [...prev, optimistic]);
 
       let currentChatId = chatId;
 
-      // Si la discussion n'existe pas encore, on la crée avant le premier message
       if (!currentChatId) {
         const newChat = await chatsApi.createChat();
         currentChatId = newChat.id;
@@ -72,9 +72,13 @@ export function useChatMessages({ chatId, onChatCreated, onChatUpdated }: Option
       const updatedChat = await chatsApi.sendMessage(currentChatId, content);
       setMessages(updatedChat.messages);
       onChatUpdated?.();
+      return true;
     } catch (err) {
       console.error("Erreur lors de l'envoi du message:", err);
+      // Retirer le message optimiste : le serveur ne l'a pas enregistré
+      setMessages((prev) => prev.filter((m) => m !== optimistic));
       setError(err instanceof Error ? err.message : "Erreur lors de l'envoi");
+      return false;
     } finally {
       setIsSending(false);
     }

@@ -1,4 +1,6 @@
 import asyncio
+import logging
+import time
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -8,13 +10,17 @@ from sqlmodel import Session, select
 
 from src.agent import news_agent, AGENT_PROMPT, build_system_prompt
 from src.auth import get_current_user
+from src.config import LLM_TIMEOUT_SECONDS
 from src.database import get_session
 from src.models import Chat, ChatResponse, MessageRequest, User
 from src.news import fetch_top_news
 
 router = APIRouter(prefix="/chats", tags=["chats"])
 
+logger = logging.getLogger("uvicorn.error")
+
 RETRY_CODES = {429, 500, 503}
+RETRY_PAUSE_SECONDS = 1
 
 
 def get_own_chat(chat_id: int, user: User, session: Session) -> Chat:
@@ -32,20 +38,33 @@ def get_own_chat(chat_id: int, user: User, session: Session) -> Chat:
     return chat
 
 
+def is_retryable(exc: BaseException) -> bool:
+    """Erreur temporaire du fournisseur de LLM (429, 500, 503)."""
+    if isinstance(exc, ModelHTTPError):
+        return exc.status_code in RETRY_CODES
+    # FallbackModel lève un groupe d'exceptions quand tous les modèles ont échoué
+    if isinstance(exc, BaseExceptionGroup):
+        return all(is_retryable(e) for e in exc.exceptions)
+    return False
+
+
 async def with_retry(call, retries: int = 3):
     for attempt in range(retries):
         try:
             return await call()
-        except ModelHTTPError as e:
-            print("IA error", e.status_code, e.body)
-            if e.status_code not in RETRY_CODES:
-                raise
-            if attempt == retries - 1:
+        except (ModelHTTPError, BaseExceptionGroup) as e:
+            retryable = is_retryable(e)
+            logger.warning("IA error (tentative %s/%s, retryable=%s): %s",
+                           attempt + 1, retries, retryable, e)
+            if not retryable or attempt == retries - 1:
+                if not retryable:
+                    # configuration : modèle retiré, clé invalide… à corriger côté serveur
+                    logger.error("Erreur LLM non retentable", exc_info=e)
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail="Le service IA est temporairement indisponible, réessayez dans un instant.",
-                )
-            await asyncio.sleep(2 ** (attempt + 1))
+                ) from e
+            await asyncio.sleep(RETRY_PAUSE_SECONDS * (attempt + 1))
 
 
 async def run_agent(content: str, history: list[ModelMessage], system_prompt: str):
@@ -109,17 +128,9 @@ async def send_message(
     session: Session = Depends(get_session),
 ):
     chat = get_own_chat(chat_id, current_user, session)
+    history = load_history(chat)
 
-    # Reconstitution de l'historique pydantic-ai
-    history: list[ModelMessage] = []
-    if chat.messages:
-        try:
-            history = ModelMessagesTypeAdapter.validate_python(chat.messages)
-        except Exception:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Erreur lors du chargement de l'historique du chat",
-            )
+    # Le prompt système (avec les actualités) est figé à la première question
     if not chat.system_prompt:
         news = await fetch_top_news()
         if news:
@@ -127,8 +138,29 @@ async def send_message(
 
     system_prompt = chat.system_prompt or AGENT_PROMPT
 
-    # Exécution de l'agent IA avec l'historique
-    result = await run_agent(body.content, history, system_prompt)
+    # Exécution de l'agent IA avec l'historique, dans un budget de temps borné
+    started = time.perf_counter()
+    try:
+        async with asyncio.timeout(LLM_TIMEOUT_SECONDS):
+            result = await run_agent(body.content, history, system_prompt)
+    except TimeoutError:
+        logger.warning(
+            "chat_message chat_id=%s timeout après %.1fs",
+            chat_id, time.perf_counter() - started,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Le service IA met trop de temps à répondre, réessayez.",
+        )
+    usage = result.usage() if callable(result.usage) else result.usage
+
+    logger.info(
+        "chat_message chat_id=%s duration=%.2fs requests=%s model=%s",
+        chat_id,
+        time.perf_counter() - started,
+        getattr(usage, "requests", None),
+        getattr(result.response, "model_name", None),
+    )
 
     # Sérialisation pour la colonne JSON / JSONB
     chat.messages = ModelMessagesTypeAdapter.dump_python(

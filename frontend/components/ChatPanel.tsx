@@ -73,7 +73,8 @@ export default function ChatPanel({
 
     const userText = input;
     setInput('');
-    await chat.send(userText);
+    const ok = await chat.send(userText);
+    if (!ok) setInput(userText);
   };
 
   const avatarClass = (role: 'user' | 'assistant') =>
@@ -190,7 +191,7 @@ export default function ChatPanel({
         )}
       </section>
 
-      {(chat.error || errorFromParent(chat.error)) && !showReviewModal && (
+      {chat.error && !showReviewModal && (
         <p role="alert" className="bg-slate-white px-16 pt-3 text-body-xs text-red-600">
           {chat.error}
         </p>

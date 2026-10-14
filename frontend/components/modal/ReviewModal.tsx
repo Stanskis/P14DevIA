@@ -15,7 +15,6 @@ export default function ReviewModal({
   onSubmit,
   onClose,
 }: ReviewModalProps) {
-  // Le composant est démonté à la fermeture : le champ est donc remis à zéro automatiquement
   const [theme, setTheme] = useState('');
 
   const close = () => {

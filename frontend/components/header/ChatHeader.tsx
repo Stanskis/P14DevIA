@@ -1,5 +1,6 @@
 'use client';
-
+import { ChatIcon } from '@/public/icons/ChatIcon';
+import { ReviewIcon } from '@/public/icons/ReviewIcon';
 export type Tab = 'chat' | 'revues';
 
 interface ChatHeaderProps {
@@ -48,9 +49,9 @@ export default function ChatHeader({
         <button
           type="button"
           onClick={onOpenReviewModal}
-          className="cursor-pointer rounded-lg bg-brand-velvet px-4 py-4 text-body-xs text-slate-white"
+          className="cursor-pointer rounded-lg bg-brand-velvet px-4 py-4 text-body-xs text-slate-white flex items-center gap-2"
         >
-          📄 Générer une revue de presse
+          <ReviewIcon /> Générer une revue de presse
         </button>
       </header>
     );
@@ -63,14 +64,14 @@ export default function ChatHeader({
         onClick={() => onTabChange('chat')}
         className={tabClass(tab === 'chat')}
       >
-        💬 Chat
+        <ChatIcon /> Chat
       </button>
       <button
         type="button"
         onClick={() => onTabChange('revues')}
         className={tabClass(tab === 'revues')}
       >
-        📰 Revue de presse
+        <ReviewIcon /> Revue de presse
       </button>
     </header>
   );

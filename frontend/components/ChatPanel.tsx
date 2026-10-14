@@ -8,6 +8,9 @@ import { useChatMessages } from './hooks/useChatMessages';
 import { useReviews } from './hooks/useReviews';
 import type { Chat } from '@/types/types';
 import { formatTime } from '@/lib/format';
+import { RobotIcon } from '@/public/icons/RobotIcon';
+import { UserIcon } from '@/public/icons/UserIcon';
+import { SendIcon } from '@/public/icons/SendIcon';
 
 type Tab = 'chat' | 'revues';
 
@@ -101,7 +104,7 @@ export default function ChatPanel({
           ) : chat.messages.length === 0 ? (
             <div className="my-auto flex flex-col items-center justify-center">
               <div className="max-w-xl rounded-2xl bg-slate-white p-12 text-center">
-                🤖
+                <RobotIcon className="text-brand-velvet mx-auto" />
                 <h1 className="mt-4 text-heading-m text-brand-velvet">
                   Assistant Revue de Presse IA
                 </h1>
@@ -130,7 +133,7 @@ export default function ChatPanel({
                   >
                     {!isUser && (
                       <span aria-hidden="true" className={avatarClass('assistant')}>
-                        🤖
+                        <RobotIcon className="text-brand-velvet" />
                       </span>
                     )}
 
@@ -153,7 +156,7 @@ export default function ChatPanel({
 
                     {isUser && (
                       <span aria-hidden="true" className={avatarClass('user')}>
-                        👤
+                        <UserIcon />
                       </span>
                     )}
                   </div>
@@ -162,7 +165,7 @@ export default function ChatPanel({
               {chat.isSending && (
                 <div className="flex items-start gap-3 justify-start">
                   <span aria-hidden="true" className={avatarClass('assistant')}>
-                    🤖
+                    <RobotIcon className="text-brand-velvet" />
                   </span>
                   <div className="max-w-[80%] rounded-lg px-4 py-3 text-body-xs bg-slate-white text-slate-dark shadow-sm animate-pulse">
                     <p className="whitespace-pre-wrap">Generation en cours...</p>
@@ -221,7 +224,7 @@ export default function ChatPanel({
           disabled={chat.isSending || !input.trim() || tab !== 'chat'}
           className="flex h-10 w-12 cursor-pointer items-center justify-center rounded-lg bg-brand-velvet text-slate-white disabled:opacity-50"
         >
-          ✉️
+          <SendIcon />
         </button>
       </form>
 

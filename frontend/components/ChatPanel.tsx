@@ -239,7 +239,3 @@ export default function ChatPanel({
     </div>
   );
 }
-
-function errorFromParent(err: string | null) {
-  return err;
-}

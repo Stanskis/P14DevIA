@@ -215,6 +215,7 @@ export default function ChatPanel({
             }
           }}
           placeholder="Tapez votre message ici..."
+          aria-label="Tapez votre message ici"
           disabled={chat.isSending || tab !== 'chat'}
           className="flex-1 resize-none rounded-lg bg-slate-200 px-3 py-2 text-body-xs text-slate-dark outline-none placeholder:text-slate-700 focus:ring-1 focus:ring-brand-velvet disabled:opacity-50"
         />

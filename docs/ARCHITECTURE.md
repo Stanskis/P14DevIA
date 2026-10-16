@@ -67,25 +67,25 @@ Deux tables.
 
 **`user`**
 
-| Colonne | Type | Remarque |
-|---|---|---|
-| `id` | int, PK | |
-| `email` | varchar, unique, indexé | |
-| `hashed_password` | varchar | hash bcrypt |
+| Colonne           | Type                    | Remarque    |
+| ----------------- | ----------------------- | ----------- |
+| `id`              | int, PK                 |             |
+| `email`           | varchar, unique, indexé |             |
+| `hashed_password` | varchar                 | hash bcrypt |
 
 **`chat`**
 
-| Colonne | Type | Remarque |
-|---|---|---|
-| `id` | int, PK | |
-| `user_id` | int, FK → `user.id`, indexé | propriétaire |
-| `created_at` | timestamp (UTC, sans fuseau) | |
-| `messages` | JSON | historique complet au format PydanticAI |
-| `system_prompt` | varchar, nullable | prompt système figé à la première question |
-| `review_title` | varchar, nullable | titre de la revue de presse |
-| `review_summary` | varchar, nullable | synthèse générale |
-| `review_articles` | JSON, nullable | liste `{title, summary, url}` |
-| `review_created_at` | timestamp, nullable | date de génération |
+| Colonne             | Type                         | Remarque                                   |
+| ------------------- | ---------------------------- | ------------------------------------------ |
+| `id`                | int, PK                      |                                            |
+| `user_id`           | int, FK → `user.id`, indexé  | propriétaire                               |
+| `created_at`        | timestamp (UTC, sans fuseau) |                                            |
+| `messages`          | JSON                         | historique complet au format PydanticAI    |
+| `system_prompt`     | varchar, nullable            | prompt système figé à la première question |
+| `review_title`      | varchar, nullable            | titre de la revue de presse                |
+| `review_summary`    | varchar, nullable            | synthèse générale                          |
+| `review_articles`   | JSON, nullable               | liste `{title, summary, url}`              |
+| `review_created_at` | timestamp, nullable          | date de génération                         |
 
 Une discussion porte au plus une revue de presse : générer à nouveau remplace la précédente.
 
@@ -93,15 +93,15 @@ Une discussion porte au plus une revue de presse : générer à nouveau remplace
 
 Toutes les routes, sauf `/login`, exigent l'en-tête `Authorization: Bearer <token>`.
 
-| Méthode | Route | Description |
-|---|---|---|
-| POST | `/login` | `{email, password}` → `{access_token, token_type}` |
-| GET | `/chats` | discussions de l'utilisateur, les plus récentes d'abord |
-| POST | `/chats` | crée une discussion (201) |
-| GET | `/chats/{id}` | historique de la discussion |
-| POST | `/chats/{id}/messages` | `{content}` → discussion mise à jour avec la réponse du LLM |
-| POST | `/chats/{id}/review` | `{theme}` → génère et enregistre la revue de presse |
-| GET | `/reviews` | revues de presse de toutes les discussions de l'utilisateur |
+| Méthode | Route                  | Description                                                 |
+| ------- | ---------------------- | ----------------------------------------------------------- |
+| POST    | `/login`               | `{email, password}` → `{access_token, token_type}`          |
+| GET     | `/chats`               | discussions de l'utilisateur, les plus récentes d'abord     |
+| POST    | `/chats`               | crée une discussion (201)                                   |
+| GET     | `/chats/{id}`          | historique de la discussion                                 |
+| POST    | `/chats/{id}/messages` | `{content}` → discussion mise à jour avec la réponse du LLM |
+| POST    | `/chats/{id}/review`   | `{theme}` → génère et enregistre la revue de presse         |
+| GET     | `/reviews`             | revues de presse de toutes les discussions de l'utilisateur |
 
 Codes d'erreur : 401 (token absent, invalide ou expiré, mauvais identifiants),
 403 (discussion d'un autre utilisateur), 404 (discussion inexistante),

@@ -21,7 +21,12 @@ export interface Chat {
   messages: Message[];
 }
 
-export type ArticleSummary = { title: string; summary: string; url: string | null };
+export type ArticleSummary = {
+  title: string;
+  summary: string;
+  url: string | null;
+};
+
 export type Review = {
   chat_id: number;
   title: string;

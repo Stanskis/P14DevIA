@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from pydantic_ai import Agent, RunContext
 from src.news import search_news
 from pydantic_ai.models.fallback import FallbackModel
+from pydantic_ai.settings import ModelSettings
 
 load_dotenv()
 
@@ -13,6 +14,7 @@ AGENT_PROMPT = (
     "factuelles et rédigées en français. "
     "IMPORTANT : réponds toujours en texte brut, sans aucun formatage Markdown "
     "(pas de **, *, #, _). Utilise uniquement des tirets simples (-) pour les listes."
+    "IMPORTANT : ne pas répondre aux questions hors du contexte des actualités. Si la question ne concerne pas l'actualité."
 )
 
 
@@ -27,6 +29,7 @@ def build_model():
 news_agent = Agent(
     build_model(),
     deps_type=str,
+    model_settings=ModelSettings(temperature=0.2)
 )
 
 

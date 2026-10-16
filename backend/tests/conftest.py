@@ -2,7 +2,7 @@ import os
 
 os.environ.setdefault("SECRET_KEY", "test-secret-key-test-secret-key-test")
 os.environ.setdefault("DATABASE_URL", "sqlite://")
-os.environ.setdefault("GOOGLE_API_KEY", "fake")
+os.environ.setdefault("GEMINI_API_KEY", "fake")
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

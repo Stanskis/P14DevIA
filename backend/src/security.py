@@ -18,3 +18,7 @@ def create_access_token(data: dict) -> str:
     expire = datetime.now(timezone.utc) + \
         timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     return jwt.encode({**data, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def sanitize(text: str, limit: int = 6000) -> str:
+    return str(text).replace("<", "‹").replace(">", "›")[:limit]

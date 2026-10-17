@@ -48,7 +48,7 @@ def is_retryable(exc: BaseException) -> bool:
     return False
 
 
-async def with_retry(call, retries: int = 3):
+async def with_retry(call, retries: int = 2):
     for attempt in range(retries):
         try:
             return await call()

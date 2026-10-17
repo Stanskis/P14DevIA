@@ -20,8 +20,20 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   });
 
   if (!response.ok) {
+    if (
+      response.status === 401 &&
+      endpoint !== '/login' &&
+      typeof window !== 'undefined'
+    ) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Erreur lors de la requête');
+    const detail =
+      typeof errorData.detail === 'string'
+        ? errorData.detail
+        : JSON.stringify(errorData.detail ?? errorData);
+    throw new Error(errorData.message || detail || `Erreur ${response.status}`);
   }
 
   const data = await response.json();

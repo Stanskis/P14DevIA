@@ -49,7 +49,7 @@ export default function Menu({
         )}
       </nav>
 
-      <div className="border-t border-slate-300 px-5 py-7">
+      <div className="px-5 py-7">
         <button
           type="button"
           onClick={logout}

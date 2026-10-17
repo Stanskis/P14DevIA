@@ -7,7 +7,7 @@ exemple observé, une suggestion d'implémentation réalisable et un objectif me
 | #   | Piste                                                           | Axe         | Statut      |
 | --- | --------------------------------------------------------------- | ----------- | ----------- |
 | 1   | Réduire le temps d'attente quand le service LLM est surchargé   | performance | implémentée |
-| 2   | Remplacer `localStorage` par un cookie `httpOnly` pour le jeton | sécurité    | proposée    |
+| 2   | Remplacer `localStorage` par un cookie `httpOnly` pour le token | sécurité    | proposée    |
 
 ## Mesures disponibles
 
@@ -41,8 +41,7 @@ message disparaît au rechargement et **le texte saisi par l'utilisateur est per
 ### Implémentation
 
 - **Budget de temps** : `asyncio.timeout(LLM_TIMEOUT_SECONDS)` autour de l'appel à l'agent dans
-  `send_message` (variable d'environnement, 8 s par défaut). Au-delà, l'API répond 503 avec un
-  message en français.
+  `send_message` (variable d'environnement, 15 s par défaut). Au-delà, l'API répond 503.
 - **Pauses de reprise raccourcies** : 1 s puis 2 s (au lieu de 2 s puis 4 s), constante
   `RETRY_PAUSE_SECONDS`.
 - **Modèle de secours** : `FallbackModel(LLM_MODEL, LLM_FALLBACK_MODEL)`. Un modèle d'un autre
@@ -70,7 +69,8 @@ de 8 s légitimement : `LLM_TIMEOUT_SECONDS` se règle d'après la mesure de ré
 | Délai avant l'affichage d'une erreur (tous les modèles en échec) | 11-17 s (observé) | ≤ 15 s (d’après le benchmark)      | 3 s en test (pauses 1 s + 2 s, appels simulés)                  |
 | Texte saisi perdu après une erreur                               | oui               | 0                                  | vérifié manuellement                                            |
 | Réponse obtenue malgré une panne simulée du modèle principal     | non testé         | < 1 s via le modèle de secours     | testé par `pytest`(< 1 s); en réel : 1,03 s avec Gemini         |
-| Bascule vers le modèle de secours                                | non journalisée   | visible dans le journal (`model=`) | chat_id=2 duration=1.03s requests=1 model=gemini-3.1-flash-lite |
+| Bascule vers le modèle de secours(ancien test)                   | non journalisée   | visible dans le journal (`model=`) | chat_id=2 duration=1.03s requests=1 model=gemini-3.1-flash-lite |
+| Messages servis malgré une panne du modèle principal             | 0 erreur affichée | reposne via le modèle e secours    | model=openai/gpt-oss-120b duration=1.64                         |
 
 ### Mesure de référence
 
@@ -84,26 +84,45 @@ d'un message et régler le budget de temps :
 Lancer : `cd backend && uv run python scripts/benchmark_message.py` (espacer les essais en cas
 de 429). Si la médiane des messages avec outil dépasse 5 s, augmenter `LLM_TIMEOUT_SECONDS`.
 
-**Resultat: Benchmark sur 10 messages (5 discussions × 2 questions). Avec LLM_TIMEOUT_SECONDS=8 : 9 réponses, 1 échec 503 par timeout (max 7,8 s). Avec le budget relevé à 15 s : 10 réponses sur 10, 0 erreur, médiane 2,7 s, max 9,4 s. Sur les deux séries (20 messages), au moins 2 réponses légitimes dépassaient 8 s : le budget initial était trop juste.**
+### Résultats
+
+Benchmark sur 10 messages par série (5 discussions × 2 questions), contre le backend local
+avec le vrai LLM.
+
+| Série | `LLM_TIMEOUT_SECONDS` | Réponses  | Erreurs                | Médiane     | Max (réponses réussies) |
+| ----- | --------------------- | --------- | ---------------------- | ----------- | ----------------------- |
+| 1     | 8 s                   | 9 sur 10  | 1 (503, délai dépassé) | non relevée | 7,8 s                   |
+| 2     | 15 s                  | 10 sur 10 | 0                      | 2,7 s       | 9,4 s                   |
+
+**Décision.** Sur les deux séries (20 messages), au moins deux réponses légitimes dépassent 8 s :
+une a été coupée par le budget de la série 1, une autre a duré 9,4 s dans la série 2.
+Le budget initial de 8 s était donc trop juste. Il a été relevé à **15 s** : on accepte une
+attente d'erreur plus longue pour ne pas refuser de réponses valides.
+
+**Limites de la mesure.** L'échantillon est petit (10 messages par série) car chaque essai
+consomme du quota des API gratuites ; la médiane et le maximum sont donc indicatifs, et le
+95e centile n'est pas calculé. La latence dépend aussi du modèle et de la charge du fournisseur
+au moment du test. Une mesure plus large est à refaire avec la journalisation (`model=`,
+`duration=`) sur plusieurs jours.
 
 ---
 
-## Piste 2 : remplacer `localStorage` par un cookie `httpOnly` pour le jeton
+## Piste 2 : remplacer `localStorage` par un cookie `httpOnly` pour le token
 
 **Statut : proposée.** (Piste de sécurité, complémentaire à la piste de performance.)
 
 ### Constat
 
-Le jeton JWT est écrit dans `localStorage` par `AuthContext` et relu par `fetchWithAuth`.
+Le token JWT est écrit dans `localStorage` par `AuthContext` et relu par `fetchWithAuth`.
 Tout code JavaScript exécuté dans la page peut le lire : une faille XSS ou une dépendance npm
 compromise suffit à le voler, et il reste valable 12 h (`ACCESS_TOKEN_EXPIRE_MINUTES = 720`).
 
 **Exemple reproductible en une ligne** : dans la console du navigateur, sur le site déployé,
-`localStorage.getItem('token')` retourne le jeton complet.
+`localStorage.getItem('token')` retourne le token complet.
 
 ### Implémentation
 
-1. **Backend** : `/login` dépose le jeton dans un cookie
+1. **Backend** : `/login` dépose le token dans un cookie
    `response.set_cookie("access_token", token, httponly=True, secure=True, samesite="lax", max_age=43200)`(12h).
    `get_current_user` lit d'abord `request.cookies["access_token"]`, puis l'en-tête `Bearer`
    (conservé pour Swagger et les tests). Ajouter `POST /logout` qui supprime le cookie
